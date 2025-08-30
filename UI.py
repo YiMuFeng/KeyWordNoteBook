@@ -12,39 +12,85 @@ from Core import KeyWordNoteBook
 
 
 class LoginDialog(QDialog):
-    """登录对话框：程序启动时的第一道安全验证，仅验证主密码"""
+    """
+    登录对话框：程序启动时验证登录
+    TODO：在登录UI中添加选择密码本文件路径，将文件路径传给Core，以支持多用户
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # 移除右上角问号按钮，只保留关闭按钮
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(Qt.FramelessWindowHint)# 隐藏原生标题栏
+
         # -------------------------- 窗口基础设置 --------------------------
-        self.setWindowTitle("密码本登录")  # 窗口标题
-        self.setFixedSize(300, 150)  # 固定窗口大小（防止拉伸导致布局错乱）
+        self.setWindowTitle("登录")  # 窗口标题
+        self.setFixedSize(500, 300)  # 固定窗口大小（防止拉伸导致布局错乱）
         self.main_key = None  # 存储用户输入的主密码（验证后传递给核心类）
 
         # -------------------------- 布局初始化 --------------------------
-        # 垂直布局：控件自上而下排列（适合表单类界面）
+        # 主布局：控件自上而下排列
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(20, 20, 20, 20)  # 增加内边距
+        main_layout.setSpacing(15)  # 控件间距
 
         # -------------------------- 表单布局（密码输入） --------------------------
         # 表单布局：标签与输入框成对排列，自动对齐
         form_layout = QFormLayout()
-
+        form_layout.setAlignment(Qt.AlignCenter)    #设置表单布局在父容器中居中对齐
+        form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)# 禁止标签和输入框自动换行（避免对齐错乱）
+        form_layout.setSpacing(10)
+        form_layout.setLabelAlignment(Qt.AlignCenter)  # 标签居中对齐
+        form_layout.setFormAlignment(Qt.AlignCenter)  # 整个表单内容居中
+        form_layout.setHorizontalSpacing(15)    # 设置标签与输入框之间的间距（避免贴太近
         # 密码输入框：设置为密码模式（输入内容隐藏为*）
         self.password_input = QLineEdit()
+        self.password_input.setFixedSize(200,50)
+        self.password_input.setFont(QFont('Arial',10))
         self.password_input.setEchoMode(QLineEdit.Password)  # 关键：密码隐藏显示
-        self.password_input.setPlaceholderText("请输入主密码")  # 提示文本
-        form_layout.addRow("主密码：", self.password_input)  # 标签+输入框成对添加
+        self.password_input.setPlaceholderText("请输入登录密码")  # 提示文本
+        self.password_input.setAlignment(Qt.AlignCenter)
+
+        # 表单标签设置为白色
+        label = QLabel("登录密码：")
+        label.setFixedSize(120,50)
+        label.setFont(QFont('Arial', 14))
+        label.setAlignment(Qt.AlignVCenter | Qt.AlignRight)  # 垂直居中+水平右对齐（视觉更协调）
+
+
+        # 标签+输入框成对添加
+        form_layout.addRow(label, self.password_input)
 
         # -------------------------- 按钮布局（登录/取消） --------------------------
         # 水平布局：按钮自左向右排列（适合操作按钮组）
         btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(10)
 
         # 登录按钮：触发密码验证逻辑
         self.login_btn = QPushButton("登录")
+        self.login_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #4da6ff;
+                        color: white;
+                        border: none;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                    }
+                    QPushButton:hover {
+                        background-color: #398ae5;
+                    }
+                    QPushButton:pressed {
+                        background-color: #2a6dbb;
+                    }
+                """)
+        self.login_btn.setFixedSize(200,50)
         self.login_btn.clicked.connect(self._on_login_click)  # 绑定点击事件
 
         # 取消按钮：关闭登录窗口，退出程序
         self.cancel_btn = QPushButton("取消")
+        self.cancel_btn.setFixedSize(200, 50)
+        self.cancel_btn.setFocus()
         self.cancel_btn.clicked.connect(self.reject)  # 调用QDialog自带的"取消"逻辑
 
         btn_layout.addWidget(self.login_btn)
@@ -54,6 +100,8 @@ class LoginDialog(QDialog):
         main_layout.addLayout(form_layout)  # 先加表单
         main_layout.addLayout(btn_layout)  # 再加按钮组
         self.setLayout(main_layout)  # 设置窗口的主布局
+
+        self.cancel_btn.setFocus()  # 放在布局设置之后，避免被输入框抢占焦点
 
     def _on_login_click(self):
         """登录按钮点击事件：验证密码非空后传递结果"""

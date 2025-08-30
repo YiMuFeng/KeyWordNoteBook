@@ -17,6 +17,54 @@ def main():
     """程序入口：初始化应用→登录→启动主界面"""
     # 1. 初始化PyQt应用（固定用法，管理事件循环）
     app = QApplication(sys.argv)
+
+    # 设置全局深色样式表
+    app.setStyle("Fusion")
+    app.setStyleSheet("""
+           QDialog {
+               background-color: #2d2d2d;
+           }
+           QLabel {
+               color: #ffffff;
+           }
+           QLineEdit {
+               background-color: #333333;
+               color: #ffffff;
+               border: 1px solid #555555;
+               border-radius: 4px;
+               padding: 5px;
+           }
+           QLineEdit:focus {
+               border: 1px solid #4da6ff;
+           }
+           QPushButton {
+               background-color: #555555;
+               color: white;
+               border: none;
+               padding: 6px 12px;
+               border-radius: 4px;
+           }
+           QPushButton:hover {
+               background-color: #666666;
+           }
+           QPushButton:pressed {
+               background-color: #444444;
+           }
+           QMessageBox {
+               background-color: #2d2d2d;
+               color: #ffffff;
+           }
+           QMessageBox QPushButton {
+               background-color: #555555;
+               color: white;
+               border: none;
+               padding: 5px 10px;
+               border-radius: 3px;
+           }
+       """)
+
+
+
     # 2. 显示登录对话框
     login_dialog = LoginDialog()
     if login_dialog.exec_() != QDialog.Accepted:  # 用户取消登录
