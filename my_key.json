@@ -1,0 +1,76 @@
+{
+    "ARGON2_PARAMS": {
+        "encryption_salt": "OKBoNfKU3bwCwFdEwtv65w==",
+        "hash_len": 64,
+        "hmac_key_encrypted": "gAAAAABorIMeHBhDUN592lRrzlcI_gAoeORM9IXFiOFKqN6ajA2cE1yoCsonndJUnCxlKBU4OV7bo-AxXsq6Abp59D0a1pVS0DxdPhm18J2aEV8l0-DZrn4=",
+        "hmac_salt": "VVZRPzlfDiHh9iTlkkH7VyFM020a3TkuGQn87yIducE=",
+        "integrity_check": "4da2d2209090e57636c2f05996a522149c143e4bb0e47f2744e9fddaa51ddaae",
+        "verify_hash": "$argon2id$v=19$m=131072,t=6,p=6$6u4y3wBtfuMbQ84HlbfAow$cT+m4ignulGpNBx4rVtJnUtusgmWPXnGvtF778oXvIfRXNagS8QKyeX+l9+v7FpPMGIXHQMs0ebMxd8SLdUryg"
+    },
+    "FrequentlyKeys": {},
+    "ItemList": {
+        "1": {
+            "Index": "1",
+            "LinkURL": "",
+            "Note": "测试",
+            "Password": "gAAAAABorIMfCYPpqhg7hv7IyOMrXLw_XSaSCuYkVhymFYnlE5EdYuA6pTVMw2kWY6ebo14trHhC8qGvhdXYxvPuUd_iAvYJzw==",
+            "PasswordLevel": 2,
+            "URL": "https://www.bilibili.com/",
+            "UserName": "懿穆枫"
+        },
+        "2": {
+            "Index": "2",
+            "LinkURL": "",
+            "Note": "测试",
+            "Password": "gAAAAABorIS_buu_Jyrx8VeAqWxm0_ay36XTMCBbUwlx5Xj9p9vwTrWXCZA_ekEDhA5oY8-u0Kl6-AoH_elj7uuM4cXICEg6Qw==",
+            "PasswordLevel": 2,
+            "URL": "https://www.bilibili.com/",
+            "UserName": "懿穆枫"
+        },
+        "3": {
+            "Index": "3",
+            "LinkURL": "",
+            "Note": "测试",
+            "Password": "gAAAAABorIUgsRySwtL2TkrsYphx9Eol1tZupJ_UOaqkzBYz1aoPIFzYRkrgqes99l4UDSwKdzeWtcLaih5fMSPjgE_ZA4x_DQ==",
+            "PasswordLevel": 2,
+            "URL": "https://www.bilibili.com/",
+            "UserName": "懿穆枫"
+        },
+        "4": {
+            "Index": "4",
+            "LinkURL": "",
+            "Note": "测试",
+            "Password": "gAAAAABorIVDSKRIGtpxTqrbM6huvsl4jNHInB5DjrOfR9xeddW19QjZ6uY7qKk6UdTBBb-lX2A41TJ-gc8IIpRv2z4i4Ozx1Q==",
+            "PasswordLevel": 2,
+            "URL": "https://www.bilibili.com/",
+            "UserName": "懿穆枫"
+        },
+        "5": {
+            "Index": "5",
+            "LinkURL": "",
+            "Note": "测试",
+            "Password": "gAAAAABorIZlJegShsPq5CCyX2TSOmBlFEmUUCO5VAyc5hzZ-F5xvx290p4oFQcD5JqGjw6NJXPekJ1xUHVYdOyYnFai3l50Ew==",
+            "PasswordLevel": 2,
+            "URL": "https://www.bilibili.com/",
+            "UserName": "懿穆枫"
+        },
+        "6": {
+            "Index": "6",
+            "LinkURL": "",
+            "Note": "测试",
+            "Password": "gAAAAABorIZtiQdKaFOMyWWT71gndX6_npgCxpZHXbcanH-IugqzjKce04ClzQSLPYO8fTVMvrzzmDfZJp5o2TLqaaMJuosnMQ==",
+            "PasswordLevel": 2,
+            "URL": "https://www.bilibili.com/",
+            "UserName": "懿穆枫"
+        },
+        "7": {
+            "Index": "7",
+            "LinkURL": "",
+            "Note": "测试",
+            "Password": "gAAAAABosxAVlCxLk8xODOM6Pje_HxtrSElnf7E751TA6xUjAsPmloR7s4vtA15FjZEBDwGHElwPcxntVIJulcCrALGC0E_9vg==",
+            "PasswordLevel": 2,
+            "URL": "https://www.bilibili.com/",
+            "UserName": "懿穆枫"
+        }
+    }
+}
