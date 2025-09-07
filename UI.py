@@ -13,18 +13,72 @@
 # 联系方式：1428483061@qq.com
 # 许可协议：Apache License 2.0
 
+"""
+基于PyQt实现用户界面
+"""
+__version__ = "0.0.1.0"
+
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,  # 布局控件
     QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,  # 基础控件
-    QDialog, QFormLayout, QMessageBox, QInputDialog  # 交互控件
-)
+    QDialog, QFormLayout, QMessageBox, QInputDialog  )# 交互控件
 from PyQt5.QtCore import Qt  # Qt常量（如对齐方式）
 from PyQt5.QtGui import QFont  # 字体设置
 
-# 导入核心业务逻辑（与UI分离，通过接口调用）
 from Core import KeyWordNoteBook
 
+
+class ErrorDialog(QDialog):
+    """
+    处理Error信息的对话框
+    msg="",对话框提示信息
+    button="确认"，按钮提示信息
+    """
+    def __init__(self, parent=None,msg="",button="确认"):
+        super().__init__(parent, Qt.FramelessWindowHint | Qt.Dialog)
+
+        self.setWindowModality(Qt.ApplicationModal)  # 设置为应用程序级模态，确保在所有窗口上方显示
+        self.setFixedSize(300, 150)  # 固定消息框大小
+        self.setStyleSheet("""
+                        QDialog {
+                            background-color: #2d2d2d;
+                            border-radius: 8px;
+                            border: 1px solid #444;  /* 增加边框，确保可见性 */
+                        }
+                        QLabel {
+                            color: #ffffff;
+                            font-size: 14px;
+                        }
+                        QPushButton {
+                            background-color: #4da6ff;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            font-size: 14px;
+                            font-weight: bold;
+                        }
+                        QPushButton:hover { background-color: #398ae5; }
+                        QPushButton:pressed { background-color: #2a6dbb; }
+                    """)
+        # 消息框布局
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
+
+        # 提示文本
+        label = QLabel(msg)
+        label.setAlignment(Qt.AlignCenter)  # 文本居中
+        label.setWordWrap(True)  # 支持文本换行，避免长消息被截断
+        layout.addWidget(label)
+        # 放大的确认按钮
+        confirm_btn = QPushButton(button)
+        confirm_btn.setFixedSize(150, 40)  # 放大按钮尺寸
+        confirm_btn.clicked.connect(self.accept)  # 点击关闭消息框
+        layout.addWidget(confirm_btn, alignment=Qt.AlignCenter)  # 按钮居中
+
+        self.setLayout(layout)
+        # self.adjustSize()  # 自动调整大小以适应内容
 
 class LoginDialog(QDialog):
     """
@@ -36,7 +90,6 @@ class LoginDialog(QDialog):
         super().__init__(parent)
 
         # 移除右上角问号按钮，只保留关闭按钮
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setWindowFlags(Qt.FramelessWindowHint)# 隐藏原生标题栏
 
         # -------------------------- 窗口基础设置 --------------------------
@@ -72,7 +125,6 @@ class LoginDialog(QDialog):
         label.setFixedSize(120,50)
         label.setFont(QFont('Arial', 14))
         label.setAlignment(Qt.AlignVCenter | Qt.AlignRight)  # 垂直居中+水平右对齐（视觉更协调）
-
 
         # 标签+输入框成对添加
         form_layout.addRow(label, self.password_input)
@@ -122,7 +174,14 @@ class LoginDialog(QDialog):
         """登录按钮点击事件：验证密码非空后传递结果"""
         password = self.password_input.text().strip()  # 获取输入并去除首尾空格
         if not password:  # 空密码校验
-            QMessageBox.warning(self, "警告", "请输入主密码，不能为空！")
+            msg_box = ErrorDialog(self,"请输入登录密码，不能为空！")
+            # 确保窗口显示在最上层
+            msg_box.setWindowFlags(
+                msg_box.windowFlags() | Qt.WindowStaysOnTopHint
+            )
+            msg_box.raise_()  # 提升窗口层级
+            msg_box.activateWindow()  # 激活窗口
+            msg_box.exec_()  # 显示消息框
             return
         # 密码非空则存储并关闭登录窗口（返回"确认"状态）
         self.main_key = password
