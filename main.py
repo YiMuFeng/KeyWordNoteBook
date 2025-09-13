@@ -15,18 +15,12 @@
 
 """
 """
-__version__ = "0.0.1.0"
+__version__ = "0.0.1.1"
 
 import sys
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,  # 布局控件
-    QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,  # 基础控件
-    QDialog, QFormLayout, QMessageBox, QInputDialog  # 交互控件
-)
-from PyQt5.QtCore import Qt  # Qt常量（如对齐方式）
-from PyQt5.QtGui import QFont  # 字体设置
+from PyQt5.QtWidgets import QApplication, QDialog
 
-from UI import LoginDialog,PasswordManagerMainWindow,ErrorDialog
+from UI import LoginDialog,MainWindow,ErrorDialog
 from Core import KeyWordNoteBook
 
 
@@ -38,46 +32,81 @@ def main():
     # 设置全局深色样式表
     app.setStyle("Fusion")
     app.setStyleSheet("""
-           QDialog {
+            QMainWindow {
+               background-color: #2d2d2d;  
+            }
+            QMainWindow > QWidget {  
+                background-color: #2d2d2d;
+            }
+            QDialog {
                background-color: #2d2d2d;
-           }
-           QLabel {
+            }
+            QLabel {
                color: #ffffff;
-           }
-           QLineEdit {
+            }
+            QLineEdit {
                background-color: #333333;
                color: #ffffff;
                border: 1px solid #555555;
                border-radius: 4px;
                padding: 5px;
-           }
-           QLineEdit:focus {
+            }
+            QLineEdit:focus {
                border: 1px solid #4da6ff;
-           }
-           QPushButton {
+            }
+            QPushButton {
                background-color: #555555;
                color: white;
                border: none;
                padding: 6px 12px;
                border-radius: 4px;
-           }
-           QPushButton:hover {
+            }
+            QPushButton:hover {
                background-color: #666666;
-           }
-           QPushButton:pressed {
+            }
+            QPushButton:pressed {
                background-color: #444444;
-           }
-           QMessageBox {
+            }
+            QMessageBox {
                background-color: #2d2d2d;
                color: #ffffff;
-           }
-           QMessageBox QPushButton {
+            }
+            QMessageBox QPushButton {
                background-color: #555555;
                color: white;
                border: none;
                padding: 5px 10px;
                border-radius: 3px;
-           }
+            }
+            QTableWidget {
+                background-color: #333333;
+                color: #ffffff;
+                gridline-color: #444444;
+            }
+            QHeaderView::section {
+                background-color: #333333;
+                color: #ffffff;
+                border: 1px solid #555555;
+                padding: 5px;
+            }
+            QTableWidget QHeaderView::section:vertical {
+                width: 10px;                /* 固定行号列宽度（避免序号显示不全） */
+                text-align: center;         /* 行号居中显示（默认左对齐，居中更协调） */
+            }
+            QTableWidget::item {
+                background-color: #2d2d2d
+                border: 1px solid #444444;
+            }
+            QTableWidget::item:selected {
+                background-color: #4da6ff;  /* 选中时蓝色高亮 */
+                color: #ffffff;
+            }
+            QStatusBar {
+                background-color: #333333;
+                color: #ffffff;
+                border-top: 1px solid #444444;
+            }
+        }
        """)
 
     # 2. 显示登录对话框
@@ -88,12 +117,12 @@ def main():
 
         # 3. 初始化核心类（传入登录成功的主密码）
         try:
-            password_book = KeyWordNoteBook(mainKey=login_dialog.main_key)
+            password_book = KeyWordNoteBook(mainKey=login_dialog.main_key)#login_dialog.main_key
             break
         except UnicodeError as e:
-            error_msg = ErrorDialog(msg=str(e))
+            error_msg = ErrorDialog(msg=f"文件损坏：{str(e)}",button="退出")
             error_msg.exec_()
-            # QMessageBox.critical(None, "初始化失败", f"系统错误：{str(e)}")
+            sys.exit(1)
         except ValueError as e:
             # 密码错误：提示用户并重新显示登录界面
             error_msg = ErrorDialog(msg=str(e),button="重新输入")
@@ -105,7 +134,7 @@ def main():
             sys.exit(1)
 
     # 4. 启动主界面
-    main_window = PasswordManagerMainWindow(password_book)
+    main_window = MainWindow(password_book)
     main_window.show()  # 显示主窗口
     # 5. 运行应用的事件循环（程序阻塞在此，直到关闭）
     sys.exit(app.exec_())

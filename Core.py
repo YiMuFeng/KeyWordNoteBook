@@ -18,7 +18,7 @@
 实现文件管理，词条加密、存储功能
 提供增、删、改、查的API函数
 """
-__version__ = "0.0.1.1"
+__version__ = "0.0.1.2"
 
 from cryptography.fernet import Fernet
 import json
@@ -145,6 +145,18 @@ class KeyWordNoteBook:
         self._init_or_load_file()
 
     # API函数
+    def verify_main_key(self,upw:str)->bool:
+        """
+        验证用户权限
+        """
+        try:
+            self.ph.verify(self.verify_hash, upw)
+            print("主密码验证成功")
+            return True
+        except exceptions.VerifyMismatchError:
+            print("密码验证失败")
+            return False
+
     def add_item(self, data: KeyItem,upw:str) -> str:
         """
         向文件中新增条目，主键自增
@@ -235,41 +247,7 @@ class KeyWordNoteBook:
             print(f"条目 {No} 不存在，修改失败")
             return False
 
-    def get_non_secret_items(self):
-        """
-        获取所有条目（非密码字段）
-        :return:
-        """
-        item_list = self.load_dict.get("ItemList", {})
-        non_secret_items = []  # 存储过滤后的非敏感条目
-
-        # 定义允许向前端返回的非敏感字段（明确白名单，拒绝一切未声明字段）
-        allowed_fields = {
-            "Index",  # 条目唯一ID（前端用于操作标识）
-            "LinkURL",  # 关联账户（前端展示）
-            "Note", # 备注（前端展示）
-            "PasswordLevel"  # 密码等级（前端展示，无需密码本身）
-            "URL",# 网址（前端展示）
-            "UserName",  # 用户名（前端展示）
-        }
-
-        for item_id, item_data in item_list.items():
-            # 1. 过滤敏感字段：仅保留allowed_fields中的字段
-            filtered_item = {
-                field: item_data.get(field, "")  # 字段不存在时用空字符串兜底
-                for field in allowed_fields
-                if field in item_data  # 避免KeyError（若条目字段不完整）
-            }
-
-            # 2. 补充条目ID（便于前端关联操作，如修改/删除时定位条目）
-            filtered_item["ItemID"] = item_id  # 与字典键保持一致，明确标识条目
-
-            non_secret_items.append(filtered_item)
-
-        return non_secret_items
-        # return self.load_dict["ItemList"]
-
-    def get_item_by_id(self,No:str,upw:str):
+    def get_item_by_id(self,No:str,upw:str)->dict|None:
         """
         获取指定条目的（解密后）
         :param upw: 用户密码，独立验证
@@ -286,7 +264,8 @@ class KeyWordNoteBook:
 
         # 2. 获取条目数据
         if No in self.load_dict["ItemList"]:
-            target_items = self.load_dict.get("ItemList").get(No)
+            target_items = self.load_dict.get("ItemList").get(No).copy()#注意返回拷贝
+            print(target_items)
             # 解密密码字段
             try:
                 target_items["Password"] = self._decode_aes(target_items["Password"])
@@ -295,6 +274,36 @@ class KeyWordNoteBook:
                 print(f"解密条目 {No} 失败: {str(e)}")
                 return None
         return None
+
+    def get_non_secret_items(self)->list:
+        """
+        获取所有条目（非密码字段）
+        :return:
+        """
+        item_list = self.load_dict.get("ItemList", {})
+        non_secret_items = []  # 存储过滤后的非敏感条目
+
+        # 定义允许向前端返回的非敏感字段（明确白名单，拒绝一切未声明字段）
+        allowed_fields = {
+            "Index",  # 条目唯一ID（前端用于操作标识）
+            "LinkURL",  # 关联账户（前端展示）
+            "Note", # 备注（前端展示）
+            "PasswordLevel",  # 密码等级（前端展示，无需密码本身）
+            "URL",# 网址（前端展示）
+            "UserName"  # 用户名（前端展示）
+        }
+
+        for item_id, item_data in item_list.items():
+            # 1. 过滤敏感字段：仅保留allowed_fields中的字段
+            filtered_item = {
+                field: item_data.get(field, "")  # 字段不存在时用空字符串兜底
+                for field in allowed_fields
+                if field in item_data  # 避免KeyError（若条目字段不完整）
+            }
+
+            non_secret_items.append(filtered_item)
+
+        return non_secret_items
 
     def get_frequently_key(self,level:int):
         """
