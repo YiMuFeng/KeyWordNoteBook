@@ -49,18 +49,12 @@ class Argon2Params(dict):
         "integrity_check": lambda x: isinstance(x, str) and len(x) == 64            # HMAC完整性校验值
     }
     def __setitem__(self, key, value):
-        # 检查key是否被允许
         if key not in self.keycode:
             raise KeyError(f"不允许的键: {key}")
-
-        # 验证value是否符合该key的规则
         if not self.keycode[key](value):
             raise ValueError(f"键 {key} 的值 {value} 不符合要求")
-
-        # 如果都通过验证，调用父类的方法设置键值对
         super().__setitem__(key, value)
     def update(self, *args, **kwargs):
-        # 重写update方法，确保也会进行验证
         temp_dict = dict(*args, **kwargs)
         for key, value in temp_dict.items():
             self[key] = value
@@ -79,18 +73,12 @@ class KeyItem(dict):
         "Note": lambda x:isinstance(x,str)              # 备注
     }
     def __setitem__(self, key, value):
-        # 检查key是否被允许
         if key not in self.keycode:
             raise KeyError(f"不允许的键: {key}")
-
-        # 验证value是否符合该key的规则
         if not self.keycode[key](value):
             raise ValueError(f"键 {key} 的值 {value} 不符合要求")
-
-        # 如果都通过验证，调用父类的方法设置键值对
         super().__setitem__(key, value)
     def update(self, *args, **kwargs):
-        # 重写update方法，确保也会进行验证
         temp_dict = dict(*args, **kwargs)
         for key, value in temp_dict.items():
             self[key] = value
@@ -103,26 +91,18 @@ class FrequentlyKey(dict):
         "Note": lambda x: isinstance(x, str)  # 备注
     }
     def __setitem__(self, key, value):
-        # 检查key是否被允许
         if key not in self.keycode:
             raise KeyError(f"不允许的键: {key}")
-
-        # 验证value是否符合该key的规则
         if not self.keycode[key](value):
             raise ValueError(f"键 {key} 的值 {value} 不符合要求")
-
-        # 如果都通过验证，调用父类的方法设置键值对
         super().__setitem__(key, value)
     def update(self, *args, **kwargs):
-        # 重写update方法，确保也会进行验证
         temp_dict = dict(*args, **kwargs)
         for key, value in temp_dict.items():
             self[key] = value
 
 class KeyWordNoteBook:
-    """
-    密码本管理器
-    """
+    """密码本管理器"""
     def __init__(self, mainKey:str,path:str=r"my_key.json"):
         """
         :param mainKey: 管理员主密钥
@@ -148,6 +128,7 @@ class KeyWordNoteBook:
     def verify_main_key(self,upw:str)->bool:
         """
         验证用户权限
+        :param upw: 二级密码
         """
         try:
             self.ph.verify(self.verify_hash, upw)
@@ -178,7 +159,7 @@ class KeyWordNoteBook:
         data["Password"] = self._encode_aes(data["Password"])  # AES加密主数据
 
         # 写入条目
-        self.load_dict["ItemList"].update({data["Index"]: data})  # 将数据加入字典
+        self.load_dict["ItemList"].update({data["Index"]: data})
         self._sync_to_file()
         print("已写入条目", data["Index"])
         return data["Index"]
@@ -239,7 +220,7 @@ class KeyWordNoteBook:
                 data["PasswordLevel"] = item["PasswordLevel"]
 
             # 写入条目
-            self.load_dict["ItemList"].update({data["Index"]: data})  # 将数据加入字典
+            self.load_dict["ItemList"].update({data["Index"]: data})
             self._sync_to_file()
             print("已写入条目", data["Index"])
             return data["Index"]
@@ -285,20 +266,19 @@ class KeyWordNoteBook:
 
         # 定义允许向前端返回的非敏感字段（明确白名单，拒绝一切未声明字段）
         allowed_fields = {
-            "Index",  # 条目唯一ID（前端用于操作标识）
-            "LinkURL",  # 关联账户（前端展示）
-            "Note", # 备注（前端展示）
-            "PasswordLevel",  # 密码等级（前端展示，无需密码本身）
-            "URL",# 网址（前端展示）
-            "UserName"  # 用户名（前端展示）
+            "Index",            # 条目唯一ID
+            "LinkURL",          # 关联账户
+            "Note",             # 备注
+            "PasswordLevel",    # 密码等级
+            "URL",              # 网址
+            "UserName"          # 用户名
         }
-
+        # 过滤敏感字段：仅保留allowed_fields中的字段
         for item_id, item_data in item_list.items():
-            # 1. 过滤敏感字段：仅保留allowed_fields中的字段
             filtered_item = {
-                field: item_data.get(field, "")  # 字段不存在时用空字符串兜底
+                field: item_data.get(field, "")
                 for field in allowed_fields
-                if field in item_data  # 避免KeyError（若条目字段不完整）
+                if field in item_data
             }
 
             non_secret_items.append(filtered_item)
@@ -319,12 +299,11 @@ class KeyWordNoteBook:
         文件加载，验证，或初始化
         :return:
         """
-        # 检查文件是否存在，不存在则创建空文件
+        # 检查文件是否存在
         if not os.path.exists(self.Path):
             self._initialize_new_book()
             return
 
-        # 尝试解析JSON,初始化或加载文件
         with open(self.Path, 'r', encoding='utf-8') as self.file:
             try:
                 self.file.seek(0)
@@ -336,7 +315,7 @@ class KeyWordNoteBook:
 
         params = self.load_dict.get("ARGON2_PARAMS", {})
 
-        # 3. 验证核心参数完整性（必须包含所有关键字段）
+        # 验证核心参数完整性（必须包含所有关键字段）
         required_params = [ "verify_hash", "hash_len","encryption_salt",
                             "hmac_salt", "hmac_key_encrypted", "integrity_check"]
         missing = [p for p in required_params if p not in params]
@@ -349,23 +328,23 @@ class KeyWordNoteBook:
             self.ph.verify(self.verify_hash, self.MainKey)
             print("主密码验证成功")
         except exceptions.VerifyMismatchError:
-            raise ValueError ("输入的登录密码不正确")  # 终止初始化
+            raise ValueError ("输入的登录密码不正确")
         except exceptions.VerificationError:
             raise UnicodeError("哈希字符串格式错误")
         except Exception as e:
             raise RuntimeError(f"登录时发生未知错误 - {str(e)}")
 
         # 解析AES盐
-        self.encryption_salt = params["encryption_salt"] # b64 str
+        self.encryption_salt = params["encryption_salt"]                # b64 str
         self.encryption_salt = base64.b64decode(self.encryption_salt)   # bytes
         # 解析HMAC盐 TODO:实际上hmac盐在加载时不需要使用，这里仅保证其完整性 为hmac_key解码失败时提供降级处理
-        self.hmac_salt = params["hmac_salt"]    # b64 str
-        self.hmac_salt = base64.b64decode(self.hmac_salt)   # bytes
+        self.hmac_salt = params["hmac_salt"]                            # b64 str
+        self.hmac_salt = base64.b64decode(self.hmac_salt)               # bytes
 
         # 解析HMAC密钥
-        encrypted_hmac_key = params["hmac_key_encrypted"]  # 读取文件中的hmac密钥 加密后的b64str
-        hmac_key_str = self._decode_aes(encrypted_hmac_key)  # 解密的base64 str
-        self.hmac_key = base64.b64decode(hmac_key_str)      # 解密hmac密钥 bytes
+        encrypted_hmac_key = params["hmac_key_encrypted"]       # 读取文件中的hmac密钥 加密后的b64str
+        hmac_key_str = self._decode_aes(encrypted_hmac_key)     # 解密的base64 str
+        self.hmac_key = base64.b64decode(hmac_key_str)          # 解密hmac密钥 bytes
 
         # 文件完整性验证
         computed_hmac = self._compute_file_hmac(self.load_dict)    # 计算文件的hmac
@@ -382,7 +361,7 @@ class KeyWordNoteBook:
         """
         # 1. 生成验证用哈希
         self.verify_hash = self.ph.hash(self.MainKey)
-        # 2. 生成加密专用盐值（独立于验证盐值，16字节随机数）
+        # 2. 生成16字节AES盐
         self.encryption_salt = secrets.token_bytes(16)  # bytes
         encrypted_salt_b64 = base64.b64encode(self.encryption_salt).decode('utf-8')  # Base64 str
         # 3. 生成HMAC盐
@@ -391,7 +370,7 @@ class KeyWordNoteBook:
         # 4. 派生HMAC密钥
         self.hmac_key = self._derive_hmac_key()  # bytes
         hmac_key_str = base64.b64encode(self.hmac_key).decode('utf-8')  # Base64 str
-        # 用AES密钥加密HMAC密钥后存储
+        # 用AES加密HMAC密钥后存储
         encrypted_hmac_key = self._encode_aes(hmac_key_str)  # 加密后的Base64 str
 
         # 初始化数据结构
@@ -424,9 +403,9 @@ class KeyWordNoteBook:
         """
         import copy
         # 排除校验值本身
-        data_to_check = copy.deepcopy(data) # 嵌套字典要使用深拷贝
+        data_to_check = copy.deepcopy(data)
         data_to_check["ARGON2_PARAMS"].pop("integrity_check", None)
-        # 序列化（固定格式）
+        # 序列化HMAC计算器
         data_str = json.dumps(data_to_check,
                               sort_keys=True,
                               ensure_ascii=False,
@@ -444,7 +423,7 @@ class KeyWordNoteBook:
     def _sync_to_file(self):
         """将内存中的数据同步到文件，统一管理写入操作"""
         with open(self.Path, 'w', encoding='utf-8') as f:
-            computed_hmac = self._compute_file_hmac(self.load_dict)  # 计算文件的hmac
+            computed_hmac = self._compute_file_hmac(self.load_dict)
             self.load_dict["ARGON2_PARAMS"]["integrity_check"] = computed_hmac
             json.dump(self.load_dict,
                       f,
@@ -460,14 +439,14 @@ class KeyWordNoteBook:
         try:
             # 用主密码+hmac盐值生成哈希，提取前16字节作为hmac密钥
             hash_result = self.ph.hash(self.MainKey, salt=self.hmac_salt)
-            # 解析哈希结果（使用Argon2库自带的解析工具，与标准base64库不同
+
             parts = hash_result.split("$")
             if len(parts) < 6:
                 raise ValueError(f"无效的Argon2哈希格式: {hash_result}")
-                # 3. 提取哈希部分并使用Argon2专用Base64解码器解码
+            # 提取哈希部分并使用Argon2专用Base64解码器解码
             hash_part = parts[-1]
-            hash_bytes = self.argon2_base64_decode(hash_part)  # 关键：使用argon2的解码器处理特殊Base64
-            # 4. 截取16字节（128位）作为HMAC密钥
+            hash_bytes = self.argon2_base64_decode(hash_part)
+            # 截取16字节（128位）作为HMAC密钥
             hmac_key = hash_bytes[:16]
             if len(hmac_key) < 16:
                 raise ValueError(f"哈希结果长度不足，无法生成16字节HMAC密钥（实际长度: {len(hash_bytes)}）")
@@ -483,7 +462,6 @@ class KeyWordNoteBook:
         """
         try:
             fernet = self._get_fernet()
-            # 4. 加密：自动处理IV生成、数据加密和认证标签
             encrypted_token = fernet.encrypt(plaintext.encode('utf-8'))
             return encrypted_token.decode('utf-8')  # 转为字符串存储
         except Exception as e:
@@ -497,7 +475,6 @@ class KeyWordNoteBook:
         """
         try:
             fernet = self._get_fernet()
-            # 解密：自动验证完整性并解密
             decrypted_bytes = fernet.decrypt(ciphertext.encode('utf-8'))
             return decrypted_bytes.decode('utf-8')
         except Exception as e:
@@ -507,14 +484,14 @@ class KeyWordNoteBook:
         """
         生成Fernet加密器（封装了AES-GCM）
         """
-        # 1. 派生32字节AES密钥（Fernet要求32字节URL安全的Base64编码密钥）
+        # 派生32字节AES密钥
         aes_key = self._derive_aes_key()  # 32字节密钥（AES-256）
-        # 2. 将原始密钥转换为Fernet要求的URL安全Base64格式
+        # 将原始密钥转换为Fernet要求的URL安全Base64格式
         fernet_key = base64.urlsafe_b64encode(aes_key)
-        # 3. 确保密钥长度正确（Fernet要求32字节）
-        if len(fernet_key) != 44:  # 32字节原始密钥经Base64编码后应为44字节
+        # 确保密钥长度正确，32字节原始密钥经Base64编码后应为44字节
+        if len(fernet_key) != 44:
             raise ValueError(f"无效的Fernet密钥长度: {len(fernet_key)}")
-        # 4. 返回Fernet加密器（内部使用AES-GCM模式，自带认证）
+        # 返回Fernet加密器（内部使用AES-GCM模式，自带认证）
         return Fernet(fernet_key)
 
     def _derive_aes_key(self) -> bytes:
@@ -526,14 +503,13 @@ class KeyWordNoteBook:
         # 用主密码+加密盐值生成哈希，提取前32字节作为AES-256密钥
         try:
             hash_result = self.ph.hash(self.MainKey, salt=self.encryption_salt)
-            # 解析哈希结果（使用Argon2库自带的解析工具，与标准base64库不同
             parts = hash_result.split("$")
             if len(parts) < 6:
                 raise ValueError(f"无效的Argon2哈希格式: {hash_result}")
-            # 3. 提取哈希部分并使用Argon2专用Base64解码器解码
+            # 提取哈希部分并使用Argon2专用Base64解码器解码
             hash_part = parts[-1]
-            hash_bytes = self.argon2_base64_decode(hash_part)  # 关键：使用argon2的解码器处理特殊Base64
-            # 4. 截取前32字节作为AES-256密钥
+            hash_bytes = self.argon2_base64_decode(hash_part)
+            # 截取前32字节作为AES-256密钥
             aes_key = hash_bytes[:32]
             if len(aes_key) < 32:
                 raise ValueError(f"哈希结果长度不足，无法生成32字节AES密钥")
@@ -547,7 +523,7 @@ class KeyWordNoteBook:
         :return:
         """
         ItemList = self.load_dict.get("ItemList",{})
-        if not ItemList:  # 如果字典为空，返回1作为第一个索引
+        if not ItemList:
             return "1"
         # 取现有最大索引值并加1，确保唯一性
         max_index = max(int(key) for key in ItemList)
@@ -561,11 +537,9 @@ class KeyWordNoteBook:
         :return: 强度等级（0-5）
         """
         if not isinstance(key, str) or len(key) == 0:
-            return 0  # 空密码直接返回最低级
-
+            return 0
         score = 0  # 评分
-        length = len(key)  # 密码长度
-
+        length = len(key)
         # 1. 密码长度评估（占比30%）
         if length >= 16:
             score += 3  # 超长密码（优秀）
@@ -629,10 +603,9 @@ class KeyWordNoteBook:
 
 
 if __name__=="__main__":
+    # API示例
     m_KeyWordNotBook = KeyWordNoteBook("testp")
-
-    # # 新建条目
-    testlint = KeyItem()        # 类似于 testlint ={}
+    testlint = KeyItem()
     testlint.update({
         "Index": "0",
         "PasswordLevel": 4,
@@ -643,9 +616,9 @@ if __name__=="__main__":
         "Note": "github账户" })
 
     # # 写入密码本
-    m_KeyWordNotBook.add_item(testlint,upw="")
+    m_KeyWordNotBook.add_item(testlint,upw="testpw")
+    # m_KeyWordNotBook.delete_item("11",upw="testpw")
     # m_KeyWordNotBook.update_item("1",testlint,upw="testpw")
     # print(m_KeyWordNotBook.get_item_by_id("7",upw="testpw"))
-    # m_KeyWordNotBook.delete_item("11",upw="testpw")
     # m_KeyWordNotBook.get_item_by_id("2",upw="testpasswords")
     # m_KeyWordNotBook.get_item_by_id("2",upw="testpw")

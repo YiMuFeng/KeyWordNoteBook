@@ -26,7 +26,6 @@ from Core import KeyWordNoteBook
 
 def main():
     """程序入口：初始化应用→登录→启动主界面"""
-    # 1. 初始化PyQt应用（固定用法，管理事件循环）
     app = QApplication(sys.argv)
 
     # 设置全局深色样式表
@@ -90,8 +89,8 @@ def main():
                 padding: 5px;
             }
             QTableWidget QHeaderView::section:vertical {
-                width: 10px;                /* 固定行号列宽度（避免序号显示不全） */
-                text-align: center;         /* 行号居中显示（默认左对齐，居中更协调） */
+                width: 10px;                
+                text-align: center; 
             }
             QTableWidget::item {
                 background-color: #2d2d2d
@@ -113,7 +112,7 @@ def main():
     while True:
         login_dialog = LoginDialog()
         if login_dialog.exec_() != QDialog.Accepted:  # 用户取消登录
-            sys.exit(0)  # 退出程序
+            sys.exit(0)
 
         # 3. 初始化核心类（传入登录成功的主密码）
         try:
@@ -126,7 +125,7 @@ def main():
         except ValueError as e:
             # 密码错误：提示用户并重新显示登录界面
             error_msg = ErrorDialog(msg=str(e),button="重新输入")
-            error_msg.exec_()  # 显示错误提示，用户确认后继续循环（重新登录）
+            error_msg.exec_()
         except Exception as e:
             # 其他致命错误（如文件损坏、权限问题）：提示后退出
             error_msg = ErrorDialog(msg=f"初始化失败.系统错误：{str(e)}", button="退出")
@@ -136,7 +135,7 @@ def main():
     # 4. 启动主界面
     main_window = MainWindow(password_book)
     main_window.show()  # 显示主窗口
-    # 5. 运行应用的事件循环（程序阻塞在此，直到关闭）
+
     sys.exit(app.exec_())
 
 
