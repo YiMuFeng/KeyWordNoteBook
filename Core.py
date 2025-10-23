@@ -179,16 +179,43 @@ class KeyWordNoteBook:
             return False
 
         if No in self.load_dict["ItemList"]:
-            # 从内存字典中删除条目
-            del self.load_dict["ItemList"][No]
+            # 将条目移动到回收站（标记删除时间），避免立即永久删除
+            item = self.load_dict["ItemList"].pop(No)
+            ts = int(__import__('time').time())
+            # 存储原始条目和删除时间
+            self.load_dict.setdefault("RecycleBin", {})[No] = {"DeletedAt": ts, "Item": item}
 
             # 同步到文件
             self._sync_to_file()
-            print(f"已删除条目 {No}")
+            print(f"已移动条目 {No} 到回收站")
             return True
         else:
             print(f"条目 {No} 不存在，删除失败")
             return False
+
+    def purge_recycle_bin_older_than(self, days: int = 5):
+        """
+        永久删除回收站中超过指定天数的条目。
+        :param days: 保留天数，默认5天
+        """
+        now = int(__import__('time').time())
+        cutoff = now - days * 24 * 3600
+        rb = self.load_dict.setdefault("RecycleBin", {})
+        to_delete = [k for k, v in rb.items() if v.get('DeletedAt', 0) < cutoff]
+        for k in to_delete:
+            rb.pop(k, None)
+        if to_delete:
+            self._sync_to_file()
+
+    def restore_from_recycle(self, No: str) -> bool:
+        """从回收站还原条目到 ItemList"""
+        rb = self.load_dict.setdefault("RecycleBin", {})
+        if No in rb:
+            entry = rb.pop(No)
+            self.load_dict.setdefault("ItemList", {})[No] = entry.get('Item')
+            self._sync_to_file()
+            return True
+        return False
 
     def update_item(self, No: str, data: KeyItem,upw:str):
         """
@@ -258,31 +285,14 @@ class KeyWordNoteBook:
 
     def get_non_secret_items(self)->list:
         """
-        获取所有条目（非密码字段）
+        获取所有条目（完整字段，便于 UI 格式化展示）
         :return:
         """
         item_list = self.load_dict.get("ItemList", {})
-        non_secret_items = []  # 存储过滤后的非敏感条目
-
-        # 定义允许向前端返回的非敏感字段（明确白名单，拒绝一切未声明字段）
-        allowed_fields = {
-            "Index",            # 条目唯一ID
-            "LinkURL",          # 关联账户
-            "Note",             # 备注
-            "PasswordLevel",    # 密码等级
-            "URL",              # 网址
-            "UserName"          # 用户名
-        }
-        # 过滤敏感字段：仅保留allowed_fields中的字段
+        non_secret_items = []
         for item_id, item_data in item_list.items():
-            filtered_item = {
-                field: item_data.get(field, "")
-                for field in allowed_fields
-                if field in item_data
-            }
-
-            non_secret_items.append(filtered_item)
-
+            # 直接返回全部字段（不过滤），便于 UI 展示
+            non_secret_items.append(dict(item_data))
         return non_secret_items
 
     def get_frequently_key(self,level:int):
@@ -390,7 +400,9 @@ class KeyWordNoteBook:
         self.load_dict.update({
             "ARGON2_PARAMS": m_Argon2Params,
             "ItemList": m_ItemDict,
-            "FrequentlyKeys": m_FrequentlyKeyDict
+            "FrequentlyKeys": m_FrequentlyKeyDict,
+            # 回收站: 存储已删除条目，保留一定天数后自动清理
+            "RecycleBin": {}
             })
         self._sync_to_file()
         print("新密码本初始化完成")
@@ -604,7 +616,7 @@ class KeyWordNoteBook:
 
 if __name__=="__main__":
     # API示例
-    m_KeyWordNotBook = KeyWordNoteBook("testp")
+    m_KeyWordNotBook = KeyWordNoteBook("1")
     testlint = KeyItem()
     testlint.update({
         "Index": "0",
@@ -616,7 +628,7 @@ if __name__=="__main__":
         "Note": "github账户" })
 
     # # 写入密码本
-    m_KeyWordNotBook.add_item(testlint,upw="testpw")
+    m_KeyWordNotBook.add_item(testlint,upw="1")
     # m_KeyWordNotBook.delete_item("11",upw="testpw")
     # m_KeyWordNotBook.update_item("1",testlint,upw="testpw")
     # print(m_KeyWordNotBook.get_item_by_id("7",upw="testpw"))
