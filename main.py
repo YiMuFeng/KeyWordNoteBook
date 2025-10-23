@@ -15,128 +15,125 @@
 
 """
 """
-__version__ = "0.0.1.1"
+__version__ = "0.0.1.2"
 
 import sys
+import argparse
+import logging
 from PyQt5.QtWidgets import QApplication, QDialog
 
-from UI import LoginDialog,MainWindow,ErrorDialog
+from UI import LoginDialog, MainWindow, ErrorDialog
 from Core import KeyWordNoteBook
 
 
-def main():
-    """程序入口：初始化应用→登录→启动主界面"""
-    app = QApplication(sys.argv)
+def setup_logging(debug: bool = False):
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
 
-    # 设置全局深色样式表
-    app.setStyle("Fusion")
-    app.setStyleSheet("""
-            QMainWindow {
-               background-color: #2d2d2d;  
-            }
-            QMainWindow > QWidget {  
-                background-color: #2d2d2d;
-            }
-            QDialog {
-               background-color: #2d2d2d;
-            }
-            QLabel {
-               color: #ffffff;
-            }
-            QLineEdit {
-               background-color: #333333;
-               color: #ffffff;
-               border: 1px solid #555555;
-               border-radius: 4px;
-               padding: 5px;
-            }
-            QLineEdit:focus {
-               border: 1px solid #4da6ff;
-            }
-            QPushButton {
-               background-color: #555555;
-               color: white;
-               border: none;
-               padding: 6px 12px;
-               border-radius: 4px;
-            }
-            QPushButton:hover {
-               background-color: #666666;
-            }
-            QPushButton:pressed {
-               background-color: #444444;
-            }
-            QMessageBox {
-               background-color: #2d2d2d;
-               color: #ffffff;
-            }
-            QMessageBox QPushButton {
-               background-color: #555555;
-               color: white;
-               border: none;
-               padding: 5px 10px;
-               border-radius: 3px;
-            }
-            QTableWidget {
-                background-color: #333333;
-                color: #ffffff;
-                gridline-color: #444444;
-            }
-            QHeaderView::section {
-                background-color: #333333;
-                color: #ffffff;
-                border: 1px solid #555555;
-                padding: 5px;
-            }
-            QTableWidget QHeaderView::section:vertical {
-                width: 10px;                
-                text-align: center; 
-            }
-            QTableWidget::item {
-                background-color: #2d2d2d
-                border: 1px solid #444444;
-            }
-            QTableWidget::item:selected {
-                background-color: #4da6ff;  /* 选中时蓝色高亮 */
-                color: #ffffff;
-            }
-            QStatusBar {
-                background-color: #333333;
-                color: #ffffff;
-                border-top: 1px solid #444444;
-            }
+
+def get_stylesheet() -> str:
+    """Return the global stylesheet used by the application.
+
+    Keeping the stylesheet in a function makes it easy to test and
+    to swap themes later (dark mode, user themes, etc.).
+    """
+    return """
+        QWidget { background-color: #f3f6f9; color: #222222; }
+        QMainWindow { background-color: #f3f6f9; }
+        QDialog { background-color: #ffffff; }
+
+        QWidget[card="true"] { background-color: #ffffff; border-radius: 8px; }
+
+        QLabel { color: #2b2b2b; }
+        QLineEdit {
+            background-color: #ffffff;
+            color: #2b2b2b;
+            border: 1px solid #e6e9ee;
+            border-radius: 6px;
+            padding: 8px;
         }
-       """)
+        QLineEdit:focus { border: 1px solid #3b82f6; }
 
-    # 2. 显示登录对话框
+        QPushButton {
+            background-color: #0f1724;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+        QPushButton.secondary {
+            background-color: transparent; color: #475569; border: 1px solid transparent;
+        }
+        QPushButton#newBtn {
+            background-color: #0f1724; color: white; font-weight: 600; padding: 8px 14px; border-radius: 6px;
+        }
+
+        QTableWidget { background-color: transparent; gridline-color: #eef2f7; }
+        QHeaderView::section { background-color: transparent; color: #475569; padding: 8px; }
+        QTableWidget::item { background-color: #ffffff; border: 1px solid #eef2f7; }
+        QTableWidget::item:selected { background-color: #eef6ff; }
+
+        QStatusBar { background-color: transparent; color: #6b7280; }
+    """
+
+
+def run_app(argv=None) -> int:
+    """Run the GUI application. Returns process exit code.
+
+    This function is split out to make it easier to test programmatically.
+    """
+    parser = argparse.ArgumentParser(prog="KeyWordNoteBook")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    args, _ = parser.parse_known_args(argv)
+
+    setup_logging(debug=args.debug)
+    log = logging.getLogger("main")
+
+    app = QApplication(sys.argv if argv is None else argv)
+    app.setStyle("Fusion")
+    app.setStyleSheet(get_stylesheet())
+
+    # 显示登录对话框并尝试初始化核心类
     while True:
         login_dialog = LoginDialog()
-        if login_dialog.exec_() != QDialog.Accepted:  # 用户取消登录
-            sys.exit(0)
+        if login_dialog.exec_() != QDialog.Accepted:
+            log.info("User cancelled login. Exiting.")
+            return 0
 
-        # 3. 初始化核心类（传入登录成功的主密码）
         try:
-            password_book = KeyWordNoteBook(mainKey=login_dialog.main_key)#login_dialog.main_key
+            password_book = KeyWordNoteBook(mainKey=login_dialog.main_key)
             break
         except UnicodeError as e:
-            error_msg = ErrorDialog(msg=f"文件损坏：{str(e)}",button="退出")
+            log.exception("UnicodeError while initializing KeyWordNoteBook")
+            error_msg = ErrorDialog(msg=f"文件损坏：{str(e)}", button="退出")
             error_msg.exec_()
-            sys.exit(1)
+            return 1
         except ValueError as e:
             # 密码错误：提示用户并重新显示登录界面
-            error_msg = ErrorDialog(msg=str(e),button="重新输入")
+            log.warning("Authentication failed: %s", e)
+            error_msg = ErrorDialog(msg=str(e), button="重新输入")
             error_msg.exec_()
+            # loop back to re-show login
         except Exception as e:
-            # 其他致命错误（如文件损坏、权限问题）：提示后退出
+            log.exception("Fatal error while initializing KeyWordNoteBook")
             error_msg = ErrorDialog(msg=f"初始化失败.系统错误：{str(e)}", button="退出")
             error_msg.exec_()
-            sys.exit(1)
+            return 1
 
-    # 4. 启动主界面
     main_window = MainWindow(password_book)
-    main_window.show()  # 显示主窗口
+    main_window.show()
 
-    sys.exit(app.exec_())
+    exit_code = app.exec_()
+    log.info("Application exited with code %s", exit_code)
+    return int(exit_code)
+
+
+def main():
+    code = run_app()
+    sys.exit(code)
 
 
 if __name__ == '__main__':
